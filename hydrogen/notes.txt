@@ -1,0 +1,88 @@
+Compiler will take in main.cpp -> generate assembly file to be converted to object file.
+Maybe implement pointers later? Or something more complicated?
+
+cpp -> compiler -> assembly
+assembly -> assembler (nasm) -> object file
+object file is machine code but might reference other libraries on ur system
+
+object file + libs-> linker (ld) -> executable machine code
+
+3 major parts:
+tokenization -> parsing -> code generation
+
+code generation takes the parse tree and traverses it and generates the assembly
+
+nasm --felf64 test.asm --> uses nasm with 64 bit to generate object file from assembly code
+ld test.o -o test -> uses gnu ld linker to link object file
+
+We want to create a compiler for a new, lightweight language as a learning excecise.
+
+Firstly, define how you want the language to look so you know how to process the source code
+We want semicolons
+
+want to turn
+return 69;
+
+to
+
+global _start
+_start:
+    mov rax, 60
+    mov rdi, 69
+    syscall
+
+1. Lexical analysis
+COnvert the source code into a list of tokens that can be processed
+
+so return 69; would look like
+
+RETURN
+INT_LITERAL -> this is 69
+SEMICOLON
+
+Typically we take input code file -> tokenize -> parse tree -> asm
+
+
+Now that we can have many arguments and expression (for example, infinte let x = ? statements),
+we need to utilize the stack because registers wont have enoguh space. We can push things from register->stack
+or pop things from stack->register, and we can modify any value in stack, no matter where it is.
+
+std::visit is used with std::variant to automatically use the correct type
+
+When creating the binary expression strcuts, we have an issue of circular reference.
+Under the hood, when a struct is created, in order to correctly generate the struct the compiler needs to know
+its overall size. So in our BinExpr struct, we need to know size of BinAdd and BInMulti, but those need NodeExpr, which needs BinExpr
+There is no order we can do this that will fix the issue.
+
+We could just make everything a pointer and store addresses, which have consistent sizes, but the problem with this is
+its really bad for cache locality. These tiny little strcuts will be all over memory, fragmented, and when the cache
+pulls in this memory we need, it pulls it in large chunks, assming that surrounding data will be used, so we will
+get a ton of cache misses.
+
+We can use a simple low level data structure called an arena allocator, which is just a large pre-set memory box we take,
+and a pointer in that box that will allocate everything in out abstract syntax tree one at a time in this space while
+incrementing a pointer. The issue with this is we cant really free things 1 by 1 like we normally can, but that doesnt matter
+because once we are done parsing the AST, we are just going to deallocate everything at once, since we dont need anything anymore.
+
+When adding in assembly,  we need to put both values into top of stack, then add
+
+simple note on const in function names: if we do peek(const int o) const {} -> first const means function will not
+modify o, second const mean the function will not modify the state of the object it is called on. If we used peek as a
+class member function, it will not modify the current state of the object.
+
+in the parse tree for precedence climbing, the higher the precedence level, the lower the node is in the tree and the
+further you go down with recursive calls
+
+             1 + 2 * 3 is
+
+             +
+          1     *
+              2    3
+
+As you can see, the + has lower precedence, but is higher in the tree. In order to complete the + operation, we need
+lhs (which is 1) and rhs (which can only be attained by completing a higher precedence operation, the 2 * 3).
+Doing it recursively like this also makes it easier to add more operations. This operation is not commutative,
+so the order in which we do operations matters (PEMDAS!)
+
+Paranthesis are treated like terms, not bin expressions because they are the highest precedence level (do this first)!
+SO we can reset the precedence climbing to do the stuff in paranthesis first
