@@ -126,23 +126,27 @@ public:
               m_allocator(1024 * 1024 * 4) // 4MB
     {}
 
+    // Recall static on a member function menas you can call it without making object, so Parser::error_expected()
+    void error_expected(const std::string& msg) {
+        std::cerr << "[Parse Error] Expected " << msg <<"' on line " << peek(-1).value().line << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
     // Parse an if predicate, which can be else or elif or nothing
     std::optional<NodeIfPred*> parse_if_pred() {
         if (try_consume(TokenType::elif)) {
             auto elif = m_allocator.alloc<NodeIfPredElif>();
-            try_consume(TokenType::open_paran, "Missing '(' ");
+            try_consume(TokenType::open_paran, "Missing '('");
             if (auto expr = parse_expr()) {
                 elif->expr = expr.value();
             } else {
-                std::cerr << "Expected Expression\n";
-                exit(EXIT_FAILURE);
+                error_expected("Expression");
             }
-            try_consume(TokenType::close_paran, "Expected ')'");
+            try_consume(TokenType::close_paran, "')'");
             if (auto scope = parse_scope()) {
                 elif->scope = scope.value();
             } else {
-                std::cerr << "Failed to parse scope!\n";
-                exit(EXIT_FAILURE);
+                error_expected("Scope");
             }
             // Recursive
             elif->pred = parse_if_pred();
@@ -155,8 +159,7 @@ public:
             if (auto scope = parse_scope()) {
                 else_->scope = scope.value();
             } else {
-                std::cerr << "Failed to parse scope!\n";
-                exit(EXIT_FAILURE);
+                error_expected("Scope");
             }
             auto pred = m_allocator.alloc<NodeIfPred>();
             pred->var = else_;
@@ -174,7 +177,7 @@ public:
         while (auto stmt = parse_stmt()) {
             scope->stmts.push_back(stmt.value());
         }
-        try_consume(TokenType::close_curly, "Expected '}'");
+        try_consume(TokenType::close_curly, "'}'");
         return scope;
     }
 
@@ -197,10 +200,9 @@ public:
             auto term_paran = m_allocator.alloc<NodeTermParan>();
             auto expr = parse_expr();
             if (!expr.has_value()) {
-                std::cerr << "Invalid operation between paranthesis!" << std::endl;
-                exit(EXIT_FAILURE);
+                error_expected("expression");
             }
-            try_consume(TokenType::close_paran, "Expected close paranthesis");
+            try_consume(TokenType::close_paran, "')'");
             term_paran->expr = expr.value();
             auto term = m_allocator.alloc<NodeTerm>();
             term->var = term_paran;
@@ -242,8 +244,7 @@ public:
             auto expr_rhs = parse_expr(next_min_prec);
 
             if (!expr_rhs.has_value()) {
-                std::cerr << "Unable to parse expression" << std::endl;
-                exit(EXIT_FAILURE);
+                error_expected("expression: ");
             }
             // We know current token is binary operator, so we can consume and do recursive call
             auto expr = m_allocator.alloc<NodeBinExpr>();
@@ -285,7 +286,7 @@ public:
         // Function to parse statements, such as functions like let, or exits, etc.
         std::optional<NodeStmt*> parse_stmt() {
             // Exit statement case
-            if (peek().value().type == TokenType::exit && peek(1).has_value() &&
+            if (peek().has_value() && peek().value().type == TokenType::exit && peek(1).has_value() &&
                 peek(1).value().type == TokenType::open_paran) {
                 // Make NodeStmtExit* in arena allocator
                 auto node_stmt_exit = m_allocator.alloc<NodeStmtExit>();
@@ -300,11 +301,10 @@ public:
                     // if there was an expression to parse, we give this exit node the expression to parse as well before returning it in main.
                     node_stmt_exit->expr = node_expr.value();
                 } else {
-                    std::cerr << "Invalid Expression" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("Expression");
                 }
-                try_consume(TokenType::close_paran, "Expected ')'");
-                try_consume(TokenType::semi, "Expected ';'");
+                try_consume(TokenType::close_paran, "')'");
+                try_consume(TokenType::semi, "';'");
 
                 // Make return statement
                 auto node_stmt_return = m_allocator.alloc<NodeStmt>();
@@ -328,11 +328,10 @@ public:
                 if (auto expr = parse_expr()) {
                     node_stmt_let->expr = expr.value();
                 } else {
-                    std::cerr << "Invalid expression given to let!" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("expression");
                 }
                 // Check for ending semicolon
-                try_consume(TokenType::semi, "Expected ';'");
+                try_consume(TokenType::semi, "';'");
                 auto node_stmt_return = m_allocator.alloc<NodeStmt>();
                 node_stmt_return->var = node_stmt_let;
                 return node_stmt_return;
@@ -349,11 +348,10 @@ public:
                 if (auto expr = parse_expr()) {
                     node_stmt_assign->expr = expr.value();
                 } else {
-                    std::cerr << "Invalid expression given to let!" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("let");
                 }
                 // Check for ending semicolon
-                try_consume(TokenType::semi, "Expected ';'");
+                try_consume(TokenType::semi, "';'");
                 auto node_stmt_return = m_allocator.alloc<NodeStmt>();
                 node_stmt_return->var = node_stmt_assign;
                 return node_stmt_return;
@@ -365,26 +363,23 @@ public:
                     stmt->var = scope.value();
                     return stmt;
                 } else {
-                    std::cerr << "Invalid Expression" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("scope");
                 }
 
             // If statements
             } else if (auto if_ = try_consume(TokenType::if_)){
-                try_consume(TokenType::open_paran, "Expected '(");
+                try_consume(TokenType::open_paran, "'(");
                 auto stmt_if = m_allocator.alloc<NodeStmtIf>();
                 if (auto expr = parse_expr()) {
                     stmt_if->expr = expr.value();
                 } else {
-                    std::cerr << "Invalid Expression" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("expression");
                 }
-                try_consume(TokenType::close_paran, "Expected')");
+                try_consume(TokenType::close_paran, "')");
                 if (auto scope = parse_scope()) {
                     stmt_if->scope = scope.value();
                 } else {
-                    std::cerr << "Expected a scope!" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("scope");
                 }
                 stmt_if->pred = parse_if_pred();
                 auto stmt = m_allocator.alloc<NodeStmt>();
@@ -403,8 +398,7 @@ public:
                 if (auto stmt = parse_stmt()) {
                     node_prog->stmts.push_back(stmt.value());
                 } else {
-                    std::cerr << "Invalid Statement" << std::endl;
-                    exit(EXIT_FAILURE);
+                    error_expected("statement");
                 }
             }
             return node_prog;
@@ -423,8 +417,8 @@ public:
             if (peek().has_value() && peek().value().type == type) {
                 return consume();
             } else {
-                std::cerr << err_msg << std::endl;
-                exit(EXIT_FAILURE);
+                error_expected(err_msg);
+                return {};
             }
         }
 
