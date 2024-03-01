@@ -30,7 +30,6 @@ int main(int argc, char** argv) {
         contents = contents_stream.str();
     }
 
-    // Instead of move() we can just put the put contents in there, but I think this is better optimization wise
     // Convert string of code to tokens to then be parsed
     Tokenizer tokenizer(std::move(contents));
     std::vector<Token> tokens = tokenizer.tokenize();
@@ -43,14 +42,13 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
     // Similarly, value is a member of the optional class and returns the value which we use to fill a file with the correct assembly
-    // tree.value() has the expression which has our exit code number
     {
         Generator generator(prog.value());
         std::fstream file("out.asm", std::ios::out);
         file << generator.gen_prog();
     }
 
-    // C
+    // Run assembler and linker
     system("nasm -felf64 out.asm");
     system("ld -o out out.o");
 

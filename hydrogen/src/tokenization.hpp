@@ -1,16 +1,11 @@
-//
-// Created by prabbyd on 1/31/24.
+
 // Pragma once is the same thing as doing #Ifndef, #define, #endif, which is basically to tell the compiler to only include this
-// file once in the source code, else there could be compilation errors with multiple inclusions
-// Header file typically used to define functions (you can implement small ones, like adding, with inline)
-// YOu can use pragma or #ifndef in header files , also good to decalre constants here
 
 #pragma once
 
 #include <string>
 #include <vector>
 
-// Enum for the type of token something is
 enum class TokenType{
     exit,
     int_lit,
@@ -66,7 +61,6 @@ class Tokenizer {
         }
 
         // Turn the m_src string into a list of tokens.
-        // We implement the function here in header because it will often be reused  and is simple.
         inline std::vector<Token> tokenize() {
             int line_count = 1;
             std::string buf;

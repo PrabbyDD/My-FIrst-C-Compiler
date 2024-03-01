@@ -1,6 +1,4 @@
-//
-// Created by prabbyd on 1/31/24.
-//
+
 #pragma once
 
 #include "parser.hpp"
@@ -32,7 +30,6 @@ class Generator {
                     // QWORD is needed for data not being pushed from register (here from stack)
                     // mult by 8 because stack_size/stack_loc is using 1 for 64 bits, stack pointer in assembly in bytes
                     // then we push this copy onto top of stack
-                    // if this was a class instead of an integer, probably dont want to copy it, and use ref instead
                     offset << "QWORD [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "]";
                     gen.push(offset.str());
                 }
@@ -164,7 +161,7 @@ class Generator {
                     gen.gen_scope(pred_elif->scope);
                     // As soon as one of the elifs resolves, then dont check anything else and jump to endif
                     gen.m_output << "    jmp " << end_label_store << '\n';
-                    // This is an elif, so we can have inifite elifs. Need to check if has value
+                    // This is an elif, so we can have infinite elifs. Need to check if has value
                     if (pred_elif->pred.has_value()) {
                         gen.m_output << label << ":\n";
                         gen.gen_if_pred(pred_elif->pred.value(), end_label_store);
