@@ -24,4 +24,3 @@ Things left to finish before i am satisfied with this project for now:
   - Basic pointers 
   - Maybe something wack
   - Maybe a quick video or write up
-  - add to my website as project
