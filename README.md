@@ -14,11 +14,12 @@ cmake --build build
 ```
 
 To run the test.hy file with any modifications in the file you may run:
-
-- cd build
-- ./hydro ../test.hy <---updates with your changes
-- ./out
-- echo $? <----prints output value of test.hy onto terminal
+```
+cd build
+./hydro ../test.hy
+./out
+echo $?
+```
 
 Things left to finish before i am satisfied with this project for now:
   - Floating point arithmetic
