@@ -6,17 +6,17 @@ Will not be trying to make an optimal and majorly useable language, but just for
 
 To build on your linux machine, make sure you have nasm (assembler) and ld (GNU linker) installed and cloned this repo, run:
 
-cd hydrogen
-mkdir build
-cmake -S . -B build
-cmake --build build
+- cd hydrogen
+- mkdir build
+- cmake -S . -B build
+- cmake --build build
 
 To run the test.hy file with any modifications in the file you may run;
 
-cd build
-./hydro ../test.hy <---updates with your changes
-./out
-echo $? <----prints output value of test.hy onto terminal
+- cd build
+- ./hydro ../test.hy <---updates with your changes
+- ./out
+- echo $? <----prints output value of test.hy onto terminal
 
 Things left to finish before i am satisfied with this project for now:
   - Floating point arithmetic
