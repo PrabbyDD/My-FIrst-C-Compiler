@@ -79,14 +79,38 @@ struct NodeScope {
     std::vector<NodeStmt*> stmts;
 };
 
+struct NodeIfPred;
+
+struct NodeIfPredElif {
+    NodeExpr* expr{};
+    NodeScope* scope{};
+    std::optional<NodeIfPred*> pred;
+};
+
+struct NodeIfPredElse {
+    NodeScope* scope;
+};
+
+struct NodeIfPred {
+    std::variant<NodeIfPredElif*, NodeIfPredElse*> var;
+
+};
+
 struct NodeStmtIf {
     NodeExpr* expr;
     NodeScope* scope;
+    std::optional<NodeIfPred*> pred;
+};
+
+// For variable reassignment, like x = 7;
+struct NodeStmtAssign {
+    Token ident;
+    NodeExpr* expr{};
 };
 
 // Node representing statements, like setting variables with let, exit statements, etc..
 struct NodeStmt {
-    std::variant<NodeStmtExit*, NodeStmtLet*, NodeScope*, NodeStmtIf*> var;
+    std::variant<NodeStmtExit*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtAssign*> var;
 };
 
 // A node representing the program as a list of statements to parse
@@ -101,6 +125,45 @@ public:
             : m_tokens(std::move(tokens)),
               m_allocator(1024 * 1024 * 4) // 4MB
     {}
+
+    // Parse an if predicate, which can be else or elif or nothing
+    std::optional<NodeIfPred*> parse_if_pred() {
+        if (try_consume(TokenType::elif)) {
+            auto elif = m_allocator.alloc<NodeIfPredElif>();
+            try_consume(TokenType::open_paran, "Missing '(' ");
+            if (auto expr = parse_expr()) {
+                elif->expr = expr.value();
+            } else {
+                std::cerr << "Expected Expression\n";
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paran, "Expected ')'");
+            if (auto scope = parse_scope()) {
+                elif->scope = scope.value();
+            } else {
+                std::cerr << "Failed to parse scope!\n";
+                exit(EXIT_FAILURE);
+            }
+            // Recursive
+            elif->pred = parse_if_pred();
+            auto pred = m_allocator.alloc<NodeIfPred>();
+            pred->var = elif;
+            return pred;
+        }
+        if (try_consume(TokenType::else_)) {
+            auto else_ = m_allocator.alloc<NodeIfPredElse>();
+            if (auto scope = parse_scope()) {
+                else_->scope = scope.value();
+            } else {
+                std::cerr << "Failed to parse scope!\n";
+                exit(EXIT_FAILURE);
+            }
+            auto pred = m_allocator.alloc<NodeIfPred>();
+            pred->var = else_;
+            return pred;
+        }
+        return {};
+    }
 
     // Parse a scope
     std::optional<NodeScope*> parse_scope() {
@@ -221,7 +284,7 @@ public:
 
         // Function to parse statements, such as functions like let, or exits, etc.
         std::optional<NodeStmt*> parse_stmt() {
-            // Exit statment case
+            // Exit statement case
             if (peek().value().type == TokenType::exit && peek(1).has_value() &&
                 peek(1).value().type == TokenType::open_paran) {
                 // Make NodeStmtExit* in arena allocator
@@ -274,6 +337,27 @@ public:
                 node_stmt_return->var = node_stmt_let;
                 return node_stmt_return;
 
+            // Variable assignment, i.e. x = 1;
+            } else if (peek().has_value() && peek().value().type == TokenType::ident &&
+            peek(1).has_value() && peek(1).value().type == TokenType::equals) {
+                auto node_stmt_assign = m_allocator.alloc<NodeStmtAssign>();
+                node_stmt_assign->ident = consume();
+
+                //Get rid of equals
+                consume();
+
+                if (auto expr = parse_expr()) {
+                    node_stmt_assign->expr = expr.value();
+                } else {
+                    std::cerr << "Invalid expression given to let!" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                // Check for ending semicolon
+                try_consume(TokenType::semi, "Expected ';'");
+                auto node_stmt_return = m_allocator.alloc<NodeStmt>();
+                node_stmt_return->var = node_stmt_assign;
+                return node_stmt_return;
+
             // Scopes
             } else if (peek().has_value() && peek().value().type == TokenType::open_curly) {
                 if (auto scope = parse_scope()) {
@@ -302,6 +386,7 @@ public:
                     std::cerr << "Expected a scope!" << std::endl;
                     exit(EXIT_FAILURE);
                 }
+                stmt_if->pred = parse_if_pred();
                 auto stmt = m_allocator.alloc<NodeStmt>();
                 stmt->var = stmt_if;
                 return stmt;

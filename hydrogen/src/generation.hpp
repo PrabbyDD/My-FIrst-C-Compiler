@@ -18,7 +18,7 @@ class Generator {
                 // Changed gen from pointer to reference because refs cannot be null, ptrs can, this gives us good null checking
                 Generator& gen;
                 void operator()(const NodeTermIdent* term_ident) const {
-                    auto it = std::find_if(
+                    const auto it = std::find_if(
                             gen.m_vars.cbegin(),
                             gen.m_vars.cend(),
                             [&](const Var& var) { return var.name == term_ident->ident.value.value();
@@ -27,14 +27,13 @@ class Generator {
                         std::cerr << "Undeclared identifier: " << term_ident->ident.value.value() << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                    const auto& var = (*it);
                     std::stringstream offset;
                     // QWORD in assembly tells assembler that variable is 64 bit (8 bytes).
                     // QWORD is needed for data not being pushed from register (here from stack)
                     // mult by 8 because stack_size/stack_loc is using 1 for 64 bits, stack pointer in assembly in bytes
                     // then we push this copy onto top of stack
                     // if this was a class instead of an integer, probably dont want to copy it, and use ref instead
-                    offset << "QWORD [rsp + " << (gen.m_stack_size - (*it).stack_loc - 1) * 8 << "]";
+                    offset << "QWORD [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "]";
                     gen.push(offset.str());
                 }
                 // Move value into register, push from register to stack
@@ -60,6 +59,7 @@ class Generator {
             struct BinExprVisitor {
                 Generator& gen;
                 void operator()(const NodeBinExprAdd* add) const {
+                    gen.m_output << "    ;; / begin addition\n";
                     // Assembly for adding is to load values into 2 diff regs, then add
                     gen.gen_expr(add->rhs);
                     gen.gen_expr(add->lhs);
@@ -70,10 +70,13 @@ class Generator {
 
                     // put result back on stack, i think rax gets overwritten with new val
                     gen.push("rax");
+                    gen.m_output << "    ;; / end addition\n";
                 }
 
                 // Similarly done for multiplciation
                 void operator()(const NodeBinExprMulti* mult) const {
+                    gen.m_output << "    ;; / begin multiplication\n";
+
                     gen.gen_expr(mult->rhs);
                     gen.gen_expr(mult->lhs);
 
@@ -82,9 +85,12 @@ class Generator {
                     gen.m_output << "    mul rbx\n";
 
                     gen.push("rax");
+                    gen.m_output << "    ;; / end multiplication\n";
                 }
 
                 void operator()(const NodeBinExprSub* sub) const {
+                    gen.m_output << "    ;; / begin subtraction\n";
+
                     gen.gen_expr(sub->rhs);
                     gen.gen_expr(sub->lhs);
 
@@ -93,9 +99,12 @@ class Generator {
                     gen.m_output << "    sub rax, rbx\n";
 
                     gen.push("rax");
+                    gen.m_output << "    ;; / end subtraction\n";
                 }
 
                 void operator()(const NodeBinExprDiv* div) const {
+                    gen.m_output << "    ;; / begin division\n";
+
                     gen.gen_expr(div->rhs);
                     gen.gen_expr(div->lhs);
 
@@ -104,6 +113,8 @@ class Generator {
                     gen.m_output << "    div rbx\n";
 
                     gen.push("rax");
+                    gen.m_output << "    ;; / end division\n";
+
                 }
             };
 
@@ -135,6 +146,41 @@ class Generator {
             std::visit(visitor, expr->var);
         }
 
+        void gen_if_pred(const NodeIfPred* pred, const std::string& end_label) {
+
+            struct PredVisitor {
+                Generator& gen;
+                const std::string& end_label_store;
+                void operator ()(const NodeIfPredElif* pred_elif) {
+                    gen.m_output << "    ;; / begin elif\n";
+                    gen.gen_expr(pred_elif->expr);
+
+                    gen.pop("rax");
+
+                    std::string label = gen.create_label();
+
+                    gen.m_output << "    test rax, rax\n";
+                    gen.m_output << "    jz " << label << "\n";
+                    gen.gen_scope(pred_elif->scope);
+                    // As soon as one of the elifs resolves, then dont check anything else and jump to endif
+                    gen.m_output << "    jmp " << end_label_store << '\n';
+                    // This is an elif, so we can have inifite elifs. Need to check if has value
+                    if (pred_elif->pred.has_value()) {
+                        gen.m_output << label << ":\n";
+                        gen.gen_if_pred(pred_elif->pred.value(), end_label_store);
+                    }
+                    gen.m_output << "    ;; / end elif\n";
+                }
+                void operator ()(const NodeIfPredElse* pred_else) {
+                    gen.m_output << "    ;; / begin else\n";
+                    gen.gen_scope(pred_else->scope);
+                    gen.m_output << "    ;; / end else\n";
+                }
+            };
+
+            PredVisitor visitor{.gen = *this, .end_label_store = end_label};
+            std::visit(visitor, pred->var);
+        }
         void gen_stmt(const NodeStmt* stmt)  {
 
             /*
@@ -156,16 +202,16 @@ class Generator {
                 }
                 void operator ()(const NodeStmtLet* stmt_let) {
 
+                    // Code to find if identifier already in vector of identifiers
                     auto it = std::find_if(
                             gen.m_vars.cbegin(),
                             gen.m_vars.cend(),
                             [&](const Var& var) { return var.name == stmt_let->ident.value.value();
                             });
-                    const auto& var = (*it);
                     if (it != gen.m_vars.cend()) {
                         // If we already initialized a variable with same identifier name
                         // ex. trying to init let x = 7 and let x = 8 after is wrong
-                        std::cerr << "Identifier already initialized!" << stmt_let->ident.value.value() << std::endl;
+                        std::cerr << "Identifier already initialized! " << stmt_let->ident.value.value() << std::endl;
                         exit(EXIT_FAILURE);
                     }
 
@@ -176,6 +222,27 @@ class Generator {
                     // Evaluate expression, variable could potentially be let y = x, so we need to evaluate x or get it
                     // Now value of expression is at top of the stack
                     gen.gen_expr(stmt_let->expr);
+                    gen.m_output <<"    ;; /let\n";
+                }
+                void operator ()(const NodeStmtAssign* stmt_assign) {
+
+                    // ID should already be in vector, if not throw an error
+                    auto it = std::find_if(
+                            gen.m_vars.cbegin(),
+                            gen.m_vars.cend(),
+                            [&](const Var& var) { return var.name == stmt_assign->ident.value.value();
+                            });
+                    if (it != gen.m_vars.cend()) {
+                        // Recall this function generates assembly that puts result of this expr on top of stack
+                        gen.gen_expr(stmt_assign->expr);
+                        // Now pop top of stack into memory
+                        gen.pop("rax");
+                        gen.m_output << "    mov [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+                    } else {
+                        std::cerr << "Identifier not initialized: " << stmt_assign->ident.value.value() << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+
                 }
                 void operator ()(const NodeScope* stmt_scope) {
                         gen.gen_scope(stmt_scope);
@@ -194,8 +261,17 @@ class Generator {
                     gen.m_output << "    test rax, rax\n";
                     gen.m_output << "    jz " << label << "\n";
                     gen.gen_scope(stmt_if->scope);
-                    gen.m_output << label << ":\n";
-
+                    if (stmt_if->pred.has_value()) {
+                        std::string end_label = gen.create_label();
+                        gen.m_output << "    jmp " << end_label << "\n";
+                        gen.m_output << label << ":\n";
+                        gen.gen_if_pred(stmt_if->pred.value(), end_label);
+                        // End label is the label that skips over everything once if elif else resolves
+                        gen.m_output << end_label<< ":\n";
+                    } else {
+                        gen.m_output << label << ":\n";
+                    }
+                    gen.m_output << "    ;; /if\n";
                 }
 
             };

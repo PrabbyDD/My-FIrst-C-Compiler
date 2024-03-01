@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
     }
     // Similarly, value is a member of the optional class and returns the value which we use to fill a file with the correct assembly
     // tree.value() has the expression which has our exit code number
-    Generator generator(prog.value());
     {
+        Generator generator(prog.value());
         std::fstream file("out.asm", std::ios::out);
         file << generator.gen_prog();
     }

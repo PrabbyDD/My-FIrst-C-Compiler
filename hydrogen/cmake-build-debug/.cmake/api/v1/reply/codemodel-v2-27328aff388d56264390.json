@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/prabbyd/CLionProjects/hydrogen/cmake-build-debug",
-		"source" : "/home/prabbyd/CLionProjects/hydrogen"
+		"build" : "/home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen/cmake-build-debug",
+		"source" : "/home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen"
 	},
 	"version" : 
 	{

@@ -27,6 +27,9 @@ enum class TokenType{
     open_curly,
     close_curly,
     if_,
+    elif,
+    else_,
+
 };
 
 // 2 functions in one, return precedence level of operator, and tell if token is bin operator
@@ -84,6 +87,12 @@ class Tokenizer {
                         tokens.push_back({.type = TokenType::if_});
                         buf.clear();
                         continue;
+                    } else if (buf == "elif") {
+                        tokens.push_back({.type = TokenType::elif});
+                        buf.clear();
+                    } else if (buf == "else") {
+                        tokens.push_back({.type = TokenType::else_});
+                        buf.clear();
                     } else {
                         tokens.push_back({.type = TokenType::ident, .value = buf});
                         buf.clear();
@@ -98,6 +107,30 @@ class Tokenizer {
                     buf.clear();
                 } else if (std::isspace(peek().value())) {
                     consume();
+                } else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '/') {
+                    consume();
+                    consume();
+
+                    // Keep going until we encounter a new line, but dont need to consume newline bc isspace does that
+                    while (peek().has_value() && peek().value() != '\n') {
+                        consume();
+                    }
+                } else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '*') {
+                    consume();
+                    consume();
+
+                    while (peek().has_value()) {
+                        if (peek().value() == '*' && peek(1).has_value() && peek(1).value() == '/') {
+                            break;
+                        }
+                        consume();
+                    }
+                    if (peek().has_value()) {
+                        consume();
+                    }
+                    if (peek().has_value()) {
+                        consume();
+                    }
                 } else if (peek().value() == '(') {
                     consume();
                     tokens.push_back({.type = TokenType::open_paran});

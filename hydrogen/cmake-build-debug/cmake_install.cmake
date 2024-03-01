@@ -1,4 +1,4 @@
-# Install script for directory: /home/prabbyd/CLionProjects/hydrogen
+# Install script for directory: /home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/prabbyd/CLionProjects/hydrogen/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
