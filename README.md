@@ -6,12 +6,12 @@ Will not be trying to make an optimal and majorly useable language, but just for
 
 To build on your linux machine, make sure you have nasm (assembler) and ld (GNU linker) installed and cloned this repo, run:
 
-'''
+```
 cd hydrogen
 mkdir build
 cmake -S . -B build
 cmake --build build
-'''
+```
 
 To run the test.hy file with any modifications in the file you may run:
 
