@@ -4,8 +4,10 @@ and berkeley's CS164 course https://inst.eecs.berkeley.edu/~cs164/fa22/schedule.
 
 Will not be trying to make an optimal and majorly useable language, but just for learning purposes. 
 
-Things left to finish:
+Things left to finish before i am satisfied with this project for now:
   - Floating point arithmetic
   - Basic functions
   - Basic pointers 
-  - Maybe something wack 
+  - Maybe something wack
+  - refactoring some code and writing cleaner educational comments in compiler code and annotating assembly with comments
+  - Maybe a quick video or write up
