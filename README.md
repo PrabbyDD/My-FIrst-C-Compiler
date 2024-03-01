@@ -11,3 +11,4 @@ Things left to finish before i am satisfied with this project for now:
   - Maybe something wack
   - refactoring some code and writing cleaner educational comments in compiler code and annotating assembly with comments
   - Maybe a quick video or write up
+  - add to website
