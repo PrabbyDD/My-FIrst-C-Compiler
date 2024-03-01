@@ -5,9 +5,6 @@ and berkeley's CS164 course https://inst.eecs.berkeley.edu/~cs164/fa22/schedule.
 Will not be trying to make an optimal and majorly useable language, but just for learning purposes. 
 
 Things left to finish:
-  - Comments
-  - Else statements
-  - Variable assignment
   - Floating point arithmetic
   - Basic functions
   - Basic pointers 
