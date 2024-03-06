@@ -22,8 +22,5 @@ echo $?
 ```
 
 Things left to finish before i am satisfied with this project for now:
-  - Floating point arithmetic with potential SIMD support?
   - Basic functions
   - Basic pointers 
-  - Maybe something wack
-  - Maybe a quick video or write up
