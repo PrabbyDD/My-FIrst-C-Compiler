@@ -39,8 +39,11 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/c++/12/bits/istream.tcc \
   /usr/include/c++/12/bits/locale_classes.h \
   /usr/include/c++/12/bits/locale_classes.tcc \
+  /usr/include/c++/12/bits/locale_conv.h \
   /usr/include/c++/12/bits/locale_facets.h \
   /usr/include/c++/12/bits/locale_facets.tcc \
+  /usr/include/c++/12/bits/locale_facets_nonio.h \
+  /usr/include/c++/12/bits/locale_facets_nonio.tcc \
   /usr/include/c++/12/bits/localefwd.h \
   /usr/include/c++/12/bits/memoryfwd.h \
   /usr/include/c++/12/bits/move.h \
@@ -52,6 +55,7 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/c++/12/bits/postypes.h \
   /usr/include/c++/12/bits/predefined_ops.h \
   /usr/include/c++/12/bits/ptr_traits.h \
+  /usr/include/c++/12/bits/quoted_string.h \
   /usr/include/c++/12/bits/range_access.h \
   /usr/include/c++/12/bits/refwrap.h \
   /usr/include/c++/12/bits/sstream.tcc \
@@ -76,6 +80,7 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/c++/12/bits/uniform_int_dist.h \
   /usr/include/c++/12/bits/utility.h \
   /usr/include/c++/12/bits/vector.tcc \
+  /usr/include/c++/12/bitset \
   /usr/include/c++/12/cassert \
   /usr/include/c++/12/cctype \
   /usr/include/c++/12/cerrno \
@@ -83,6 +88,7 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/c++/12/cstdint \
   /usr/include/c++/12/cstdio \
   /usr/include/c++/12/cstdlib \
+  /usr/include/c++/12/ctime \
   /usr/include/c++/12/cwchar \
   /usr/include/c++/12/cwctype \
   /usr/include/c++/12/debug/assertions.h \
@@ -96,10 +102,12 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/c++/12/ext/type_traits.h \
   /usr/include/c++/12/fstream \
   /usr/include/c++/12/initializer_list \
+  /usr/include/c++/12/iomanip \
   /usr/include/c++/12/ios \
   /usr/include/c++/12/iosfwd \
   /usr/include/c++/12/iostream \
   /usr/include/c++/12/istream \
+  /usr/include/c++/12/locale \
   /usr/include/c++/12/new \
   /usr/include/c++/12/optional \
   /usr/include/c++/12/ostream \
@@ -121,6 +129,7 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/errno.h \
   /usr/include/features-time64.h \
   /usr/include/features.h \
+  /usr/include/libintl.h \
   /usr/include/linux/errno.h \
   /usr/include/locale.h \
   /usr/include/pthread.h \
@@ -205,7 +214,9 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
   /usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h \
   /usr/include/x86_64-linux-gnu/c++/12/bits/gthr-default.h \
   /usr/include/x86_64-linux-gnu/c++/12/bits/gthr.h \
+  /usr/include/x86_64-linux-gnu/c++/12/bits/messages_members.h \
   /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
+  /usr/include/x86_64-linux-gnu/c++/12/bits/time_members.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
@@ -227,7 +238,11 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
 
+/usr/include/x86_64-linux-gnu/c++/12/bits/time_members.h:
+
 /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h:
+
+/usr/include/x86_64-linux-gnu/c++/12/bits/messages_members.h:
 
 /usr/include/x86_64-linux-gnu/c++/12/bits/gthr.h:
 
@@ -261,31 +276,39 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/x86_64-linux-gnu/bits/types/locale_t.h:
 
-/usr/include/x86_64-linux-gnu/bits/types/error_t.h:
-
 /usr/include/x86_64-linux-gnu/bits/types/clock_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/typesizes.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h:
 
+/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/FILE.h:
+
+/usr/include/x86_64-linux-gnu/bits/types.h:
+
+/usr/include/x86_64-linux-gnu/bits/timex.h:
+
+/usr/include/x86_64-linux-gnu/bits/timesize.h:
+
+/usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h:
+
+/usr/include/x86_64-linux-gnu/bits/time64.h:
+
+/usr/include/c++/12/bits/utility.h:
+
+/usr/include/c++/12/bits/stl_tempbuf.h:
+
 /usr/include/x86_64-linux-gnu/bits/types/struct_sched_param.h:
 
 /usr/include/c++/12/cctype:
 
-/usr/include/c++/12/bits/stl_tempbuf.h:
-
 /usr/include/x86_64-linux-gnu/bits/errno.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
-
-/usr/include/c++/12/bits/vector.tcc:
-
-/usr/include/c++/12/variant:
-
-/usr/include/c++/12/bits/utility.h:
 
 /usr/include/c++/12/bits/stl_pair.h:
 
@@ -327,8 +350,6 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/c++/12/bits/stl_algo.h:
 
-/usr/include/c++/12/bits/range_access.h:
-
 /usr/include/asm-generic/errno.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
@@ -359,13 +380,21 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/c++/12/ext/atomicity.h:
 
-/usr/include/x86_64-linux-gnu/c++/12/bits/error_constants.h:
-
-/usr/include/x86_64-linux-gnu/bits/time64.h:
-
 /usr/include/c++/12/bits/localefwd.h:
 
+/home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen/src/arena.hpp:
+
+/usr/include/c++/12/algorithm:
+
+/usr/include/c++/12/ext/string_conversions.h:
+
 /usr/include/c++/12/bits/locale_facets.tcc:
+
+/usr/include/c++/12/bits/locale_conv.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/clockid_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
 
 /usr/include/c++/12/bits/allocator.h:
 
@@ -389,9 +418,7 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/c++/12/bits/basic_ios.h:
 
-/usr/include/c++/12/algorithm:
-
-/usr/include/c++/12/ext/string_conversions.h:
+/usr/include/c++/12/bits/locale_facets_nonio.h:
 
 /usr/include/c++/12/bits/cxxabi_init_exception.h:
 
@@ -401,13 +428,15 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/c++/12/bits/char_traits.h:
 
+/usr/include/c++/12/bits/range_access.h:
+
+/usr/include/c++/12/bits/quoted_string.h:
+
 /usr/include/c++/12/bits/basic_string.tcc:
 
 /usr/include/c++/12/bits/algorithmfwd.h:
 
 /usr/include/c++/12/bits/concept_check.h:
-
-/home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen/src/arena.hpp:
 
 /usr/include/c++/12/bits/ostream_insert.h:
 
@@ -467,19 +496,33 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/c++/12/bits/exception_defines.h:
 
+/usr/include/x86_64-linux-gnu/bits/types/__locale_t.h:
+
+/usr/include/c++/12/bits/basic_ios.tcc:
+
+/usr/include/c++/12/bits/ptr_traits.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
+
+/usr/include/c++/12/bits/vector.tcc:
+
+/usr/include/c++/12/variant:
+
 /usr/include/c++/12/bits/exception_ptr.h:
 
 /usr/include/x86_64-linux-gnu/bits/select.h:
 
 /usr/include/c++/12/bits/stl_uninitialized.h:
 
+/usr/include/c++/12/bits/functional_hash.h:
+
+/usr/include/c++/12/bitset:
+
 /usr/include/c++/12/cerrno:
 
 /usr/include/x86_64-linux-gnu/c++/12/bits/c++io.h:
 
 /usr/include/c++/12/iosfwd:
-
-/usr/include/c++/12/bits/functional_hash.h:
 
 /usr/include/c++/12/bits/refwrap.h:
 
@@ -492,6 +535,14 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 /home/prabbyd/CLionProjects/MyFirstCompiler/hydrogen/src/parser.hpp:
 
 /usr/include/c++/12/cstdlib:
+
+/usr/include/x86_64-linux-gnu/bits/types/error_t.h:
+
+/usr/include/c++/12/ctime:
+
+/usr/include/c++/12/locale:
+
+/usr/include/c++/12/typeinfo:
 
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
@@ -506,12 +557,6 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 /usr/include/c++/12/initializer_list:
 
 /usr/include/wchar.h:
-
-/usr/include/x86_64-linux-gnu/bits/types.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/FILE.h:
 
 /usr/include/x86_64-linux-gnu/bits/waitstatus.h:
 
@@ -528,6 +573,10 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 /usr/include/stdc-predef.h:
 
 /usr/include/c++/12/optional:
+
+/usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h:
+
+/usr/include/c++/12/pstl/execution_defs.h:
 
 /usr/include/x86_64-linux-gnu/c++/12/bits/c++locale.h:
 
@@ -551,8 +600,6 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/c++/12/type_traits:
 
-/usr/include/c++/12/typeinfo:
-
 /usr/include/ctype.h:
 
 /usr/include/c++/12/bits/exception.h:
@@ -573,6 +620,10 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 
 /usr/include/x86_64-linux-gnu/bits/cpu-set.h:
 
+/usr/include/c++/12/iomanip:
+
+/usr/include/libintl.h:
+
 /usr/include/c++/12/cstdint:
 
 /usr/include/linux/errno.h:
@@ -590,6 +641,8 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 /usr/include/stdio.h:
 
 /usr/include/stdlib.h:
+
+/usr/include/c++/12/bits/locale_facets_nonio.tcc:
 
 /usr/include/x86_64-linux-gnu/asm/errno.h:
 
@@ -624,23 +677,3 @@ CMakeFiles/hydro.dir/src/main.cpp.o: /home/prabbyd/CLionProjects/MyFirstCompiler
 /usr/include/c++/12/ostream:
 
 /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/clockid_t.h:
-
-/usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
-
-/usr/include/x86_64-linux-gnu/bits/timesize.h:
-
-/usr/include/x86_64-linux-gnu/bits/timex.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
-
-/usr/include/c++/12/pstl/execution_defs.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h:
-
-/usr/include/c++/12/bits/ptr_traits.h:
-
-/usr/include/c++/12/bits/basic_ios.tcc:
-
-/usr/include/x86_64-linux-gnu/bits/types/__locale_t.h:

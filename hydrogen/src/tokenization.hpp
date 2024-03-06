@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+
 enum class TokenType{
     exit,
     int_lit,
@@ -24,6 +25,9 @@ enum class TokenType{
     if_,
     elif,
     else_,
+    float_lit,
+    decimal,
+
 
 };
 
@@ -98,13 +102,32 @@ class Tokenizer {
                 } else if (peek().value() == '\n') {
                     consume();
                     line_count++;
-                } else if (std::isdigit(peek().value())) {
+                } else if (peek().value() == '.') {
+                    // Case for a decimal that starts with '.' i.e .69
                     buf.push_back(consume());
-                    while (peek().has_value() && std::isdigit(peek().value())) {
+                    while(peek().has_value() && std::isdigit(peek().value())) {
                         buf.push_back(consume());
                     }
-                    tokens.push_back({.type = TokenType::int_lit , line_count, .value = buf});
+                    tokens.push_back({TokenType::float_lit, line_count, .value = buf});
                     buf.clear();
+                } else if (std::isdigit(peek().value())) {
+                    // Includes case for int lit and float that starts with another number, i.e 6.69
+                    buf.push_back(consume());
+                    bool has_decimal = 0;
+                    while (peek().has_value() && (std::isdigit(peek().value()) || peek().value() == '.')) {
+                        if (peek().value() == '.') {
+                            has_decimal = 1;
+                        }
+                        buf.push_back(consume());
+                    }
+
+                    if (has_decimal) {
+                        tokens.push_back({TokenType::float_lit, line_count, .value = buf});
+                        buf.clear();
+                    } else {
+                        tokens.push_back({.type = TokenType::int_lit , line_count, .value = buf});
+                        buf.clear();
+                    }
                 } else if (std::isspace(peek().value())) {
                     consume();
                 } else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '/') {

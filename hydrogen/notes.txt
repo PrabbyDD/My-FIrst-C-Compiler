@@ -86,3 +86,11 @@ so the order in which we do operations matters (PEMDAS!)
 
 Paranthesis are treated like terms, not bin expressions because they are the highest precedence level (do this first)!
 SO we can reset the precedence climbing to do the stuff in paranthesis first
+
+
+// QWORD in assembly tells assembler that variable is 64 bit (8 bytes).
+                    // push QWROD [rsp - x] pushes a 64 bit number x bytes aboves the top of the stack (rsp)
+                    // mult by 8 because stack_size/stack_loc is using 1 for 64 bits, stack pointer in assembly in bytes
+                    // then we push this copy onto top of stack
+
+For float implementation, seems kinda hard, but I think if an expression ever contains a float, the entire thing becomes a float to be stored

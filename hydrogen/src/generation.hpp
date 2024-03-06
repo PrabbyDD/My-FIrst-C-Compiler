@@ -4,6 +4,10 @@
 #include "parser.hpp"
 #include <cassert>
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
+#include <bitset>
+#include <optional>
 
 class Generator {
     public:
@@ -15,6 +19,8 @@ class Generator {
             struct TermVisitor {
                 // Changed gen from pointer to reference because refs cannot be null, ptrs can, this gives us good null checking
                 Generator& gen;
+
+                // This triggers anytime we need to use the value of an identifier
                 void operator()(const NodeTermIdent* term_ident) const {
                     const auto it = std::find_if(
                             gen.m_vars.cbegin(),
@@ -26,10 +32,8 @@ class Generator {
                         exit(EXIT_FAILURE);
                     }
                     std::stringstream offset;
-                    // QWORD in assembly tells assembler that variable is 64 bit (8 bytes).
-                    // QWORD is needed for data not being pushed from register (here from stack)
-                    // mult by 8 because stack_size/stack_loc is using 1 for 64 bits, stack pointer in assembly in bytes
-                    // then we push this copy onto top of stack
+
+                    // Taking value from further down in stack @ stack_loc and then making a copy of it and pushing it to top of stack so that it can be used
                     offset << "QWORD [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "]";
                     gen.push(offset.str());
                 }
@@ -37,6 +41,14 @@ class Generator {
                 void operator()(const NodeTermIntLit* term_int_lit) const {
                     gen.m_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
                     gen.push("rax");
+                }
+                // Move value into sse reg, then to stack
+                void operator()(const NodeTermFloatLit* term_float_lit) const {
+                    // Need to convert float to hex to use the proper instruction
+                    std::string hexFloat = gen.floatStringToHex(term_float_lit->float_lit.value.value());
+                    gen.m_output << "    mov rcx, 0x" << hexFloat << "\n";
+                    gen.m_output << "    movq xmm0, rcx" << "\n";
+                    gen.push_float("xmm0");
                 }
 
                 void operator()(const NodeTermParan* paran) const {
@@ -51,65 +63,103 @@ class Generator {
             std::visit(visitor, term->var);
         }
 
-        // Function to tell if an expression binary operation is addition or multiplication
         void gen_bin_expr(const NodeBinExpr* bin_expr) {
             struct BinExprVisitor {
                 Generator& gen;
                 void operator()(const NodeBinExprAdd* add) const {
                     gen.m_output << "    ;; / begin addition\n";
+
                     // Assembly for adding is to load values into 2 diff regs, then add
                     gen.gen_expr(add->rhs);
                     gen.gen_expr(add->lhs);
-                    //To add, pop off top of stack into registers, doesnt matter which way we do, add is commutative
-                    gen.pop("rax");
-                    gen.pop("rbx");
-                    gen.m_output << "    add rax, rbx\n";
 
-                    // put result back on stack, i think rax gets overwritten with new val
-                    gen.push("rax");
+                    if (add->lhs->int_or_float == TokenType::float_lit || add->rhs->int_or_float == TokenType::float_lit) {
+                        gen.pop_float("xmm0");
+                        gen.pop_float("xmm1");
+                        gen.m_output << "    addss xmm0, xmm1\n";
+                        gen.push_float("xmm0");
+                    } else {
+                        //To add, pop off top of stack into registers, doesnt matter which way we do, add is commutative
+                        gen.pop("rax");
+                        gen.pop("rbx");
+                        gen.m_output << "    add rax, rbx\n";
+                        std::cout << "OM JEERE";
+
+                        // put result back on stack, i think rax gets overwritten with new val
+                        gen.push("rax");
+                    }
+
                     gen.m_output << "    ;; / end addition\n";
                 }
 
                 // Similarly done for multiplciation
                 void operator()(const NodeBinExprMulti* mult) const {
                     gen.m_output << "    ;; / begin multiplication\n";
-
                     gen.gen_expr(mult->rhs);
                     gen.gen_expr(mult->lhs);
+                    if (mult->lhs->int_or_float == TokenType::float_lit || mult->rhs->int_or_float == TokenType::float_lit) {
+                        gen.pop_float("xmm0");
+                        gen.pop_float("xmm1");
+                        gen.m_output << "    mulss xmm0, xmm1\n";
+                        gen.push_float("xmm0");
 
-                    gen.pop("rax");
-                    gen.pop("rbx");
-                    gen.m_output << "    mul rbx\n";
+                    } else {
+                        gen.pop("rax");
+                        gen.pop("rbx");
+                        gen.m_output << "    mul rbx\n";
+                        std::cout << "OM JEERE";
 
-                    gen.push("rax");
+                        gen.push("rax");
+                    }
+
                     gen.m_output << "    ;; / end multiplication\n";
                 }
 
                 void operator()(const NodeBinExprSub* sub) const {
                     gen.m_output << "    ;; / begin subtraction\n";
-
                     gen.gen_expr(sub->rhs);
                     gen.gen_expr(sub->lhs);
 
-                    gen.pop("rax");
-                    gen.pop("rbx");
-                    gen.m_output << "    sub rax, rbx\n";
+                    if (sub->lhs->int_or_float == TokenType::float_lit || sub->rhs->int_or_float == TokenType::float_lit) {
+                        gen.pop_float("xmm0");
 
-                    gen.push("rax");
+                        gen.pop_float("xmm1");
+                        gen.m_output << "    subss xmm0, xmm1\n";
+                        gen.push_float("xmm0");
+
+                    } else {
+                        gen.pop("rax");
+                        gen.pop("rbx");
+                        std::cout << "OM JEERE";
+                        gen.m_output << "    sub rax, rbx\n";
+                        gen.push("rax");
+                    }
+
                     gen.m_output << "    ;; / end subtraction\n";
                 }
 
                 void operator()(const NodeBinExprDiv* div) const {
                     gen.m_output << "    ;; / begin division\n";
-
                     gen.gen_expr(div->rhs);
                     gen.gen_expr(div->lhs);
 
-                    gen.pop("rax");
-                    gen.pop("rbx");
-                    gen.m_output << "    div rbx\n";
+                    if (div->lhs->int_or_float == TokenType::float_lit || div->rhs->int_or_float == TokenType::float_lit) {
 
-                    gen.push("rax");
+                        gen.pop_float("xmm0");
+                        gen.pop_float("xmm1");
+                        gen.m_output << "    divss xmm0, xmm1\n";
+                        gen.push_float("xmm0");
+
+                    } else {
+                        std::cout << "OM JEERE";
+
+                        gen.pop("rax");
+                        gen.pop("rbx");
+                        gen.m_output << "    div rbx\n";
+
+                        gen.push("rax");
+                    }
+
                     gen.m_output << "    ;; / end division\n";
 
                 }
@@ -134,7 +184,7 @@ class Generator {
                 void operator()(const NodeTerm* term) const {
                     gen.gen_term(term);
                 }
-                void operator()(const NodeBinExpr* expr_bin) const{
+                void operator()(const NodeBinExpr* expr_bin) const {
                    gen.gen_bin_expr(expr_bin);
                 }
             };
@@ -212,9 +262,8 @@ class Generator {
                         exit(EXIT_FAILURE);
                     }
 
-                    // Insert into vector
-                    gen.m_vars.push_back({.stack_loc = gen.m_stack_size, .name = stmt_let->ident.value.value()});
-
+                    // Insert into vector, optionally its int or float type
+                    gen.m_vars.push_back({.stack_loc = gen.m_stack_size, .name = stmt_let->ident.value.value(), .int_or_float = stmt_let->int_or_float});
 
                     // Evaluate expression, variable could potentially be let y = x, so we need to evaluate x or get it
                     // Now value of expression is at top of the stack
@@ -232,9 +281,14 @@ class Generator {
                     if (it != gen.m_vars.cend()) {
                         // Recall this function generates assembly that puts result of this expr on top of stack
                         gen.gen_expr(stmt_assign->expr);
-                        // Now pop top of stack into memory
-                        gen.pop("rax");
-                        gen.m_output << "    mov [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+                        // Pop off top of stack into rax (int) or xmm0 (float), then back into memory
+                        if (it->int_or_float == TokenType::int_lit) {
+                            gen.pop("rax");
+                            gen.m_output << "    mov [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+                        } else if (it->int_or_float == TokenType::float_lit) {
+                            gen.pop_float("xmm0");
+                            gen.m_output << "    movq [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], xmm0\n";
+                        }
                     } else {
                         std::cerr << "Identifier not initialized: " << stmt_assign->ident.value.value() << std::endl;
                         exit(EXIT_FAILURE);
@@ -270,12 +324,9 @@ class Generator {
                     }
                     gen.m_output << "    ;; /if\n";
                 }
-
             };
-
             StmtVisitor visitor{.gen = *this};
             std::visit(visitor, stmt->var);
-
         }
 
         // Generate the program based on the abstract syntax tree its made up from
@@ -292,12 +343,11 @@ class Generator {
             return m_output.str();
         }
     private:
-
         void begin_scope() {
             m_scopes.push_back(m_vars.size());
         }
         void end_scope() {
-            // Pop off variables until we get to last begin_scope() scope.
+            // Pop off variables until we get to last begin_scope() scope, because they could be nested scopes
             size_t pop_count = m_vars.size() - m_scopes.back();
 
             // Move stack pointer in assembly back to where this scope began
@@ -323,6 +373,33 @@ class Generator {
             m_stack_size--;
         }
 
+        // Since no actual push or pop command for sse registers, gonna have to do this manually
+        void push_float(const std::string& reg) {
+            m_output << "    sub rsp, 8" << "\n";
+            m_output << "    movq qword [rsp], "<< reg <<  "\n";
+            m_stack_size++;
+        }
+
+        void pop_float(const std::string& reg) {
+            m_output << "    movq " << reg << ", QWORD [rsp]" << "\n";
+            m_output << "    add rsp, 8" << "\n";
+            m_stack_size--;
+        }
+
+        // Function to convert float to hexadecimal
+        std::string floatStringToHex(const std::string& floatString) {
+            // Convert string to float
+            float floatValue = std::stof(floatString);
+
+            // Convert float to binary string
+            std::bitset<sizeof(float) * 8> bits(*reinterpret_cast<unsigned int*>(&floatValue));
+
+            // Convert binary string to hexadecimal string
+            std::stringstream hexStream;
+            hexStream << std::hex << std::uppercase << std::setw(sizeof(float) * 2) << std::setfill('0') << bits.to_ulong();
+            return hexStream.str();
+        }
+
         // Creates labels for assembly jumping for if statements
         std::string create_label() {
             return "label" + std::to_string(m_label_count++);
@@ -337,6 +414,7 @@ class Generator {
         struct  Var {
             size_t stack_loc;
             std::string name;
+            std::optional<TokenType> int_or_float;
         };
 
         // vector to store object and its location on stack

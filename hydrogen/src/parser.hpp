@@ -13,6 +13,10 @@ struct NodeTermIntLit {
     Token int_lit;
 };
 
+struct NodeTermFloatLit {
+    Token float_lit;
+};
+
 // An identifier is like the x in "let x = 7"
 struct NodeTermIdent {
      Token ident;
@@ -54,13 +58,12 @@ struct NodeTermParan {
 
 // Expressions fit either terms or NodeBinExpr, and a term fits either int_lit or identifier
 struct NodeTerm {
-    std::variant<NodeTermIntLit*, NodeTermIdent*, NodeTermParan*> var;
+    std::variant<NodeTermIntLit*, NodeTermIdent*, NodeTermParan*, NodeTermFloatLit*> var;
 };
 
-// Node for expressions, like integers, strings, etc
 struct NodeExpr {
-    // variant is a feature that lets a variable hold multiple different types of data
     std::variant<NodeTerm*, NodeBinExpr*> var;
+    TokenType int_or_float;
 };
 
 struct NodeStmtExit {
@@ -70,6 +73,7 @@ struct NodeStmtExit {
 struct NodeStmtLet {
     Token ident;
     NodeExpr* expr;
+    TokenType int_or_float;
 };
 
 // Forward declare because stmts can have scopes, which have lists of statements
@@ -181,13 +185,19 @@ public:
         return scope;
     }
 
-    // Parse terms, which are identifiers or int lits
+    // Parse terms, which are identifiers or ints/floats or other expressions
     std::optional<NodeTerm*> parse_term() {
         if (auto int_lit = try_consume(TokenType::int_lit)) {
             auto term_int_lit = m_allocator.alloc<NodeTermIntLit>();
             term_int_lit->int_lit = int_lit.value();
             auto term = m_allocator.alloc<NodeTerm>();
             term->var = term_int_lit;
+            return term;
+        } else if (auto float_lit = try_consume(TokenType::float_lit)) {
+            auto term_float_lit = m_allocator.alloc<NodeTermFloatLit>();
+            term_float_lit->float_lit = float_lit.value();
+            auto term = m_allocator.alloc<NodeTerm>();
+            term->var = term_float_lit;
             return term;
         } else if (auto ident = try_consume(TokenType::ident)) {
             auto term_ident = m_allocator.alloc<NodeTermIdent>();
@@ -206,6 +216,7 @@ public:
             term_paran->expr = expr.value();
             auto term = m_allocator.alloc<NodeTerm>();
             term->var = term_paran;
+            term_paran->expr->int_or_float = expr.value()->int_or_float;
             return term;
         } else {
             return {};
@@ -217,9 +228,17 @@ public:
 
         /* Begin implementation of precedence climbing*/
         std::optional<NodeTerm*> term_lhs = parse_term();
+
+        // This tells us if this overall expression evaluates to an int or float, which is necessary for assembly
+        TokenType int_or_float = TokenType::float_lit;
+        if (term_lhs.value()->var.index() == 0) {
+            int_or_float = TokenType::int_lit;
+        }
+
         // Doing this bc add->lhs or mult->lhs is an expr, and we currently have it as a term, so we need to transfer
         auto expr_lhs = m_allocator.alloc<NodeExpr>();
         expr_lhs->var = term_lhs.value();
+        expr_lhs->int_or_float = int_or_float;
         if (!term_lhs.has_value()) {
             return {};
         }
@@ -252,36 +271,43 @@ public:
             if (op.type == TokenType::plus) {
                 auto add = m_allocator.alloc<NodeBinExprAdd>();
                 expr_lhs2->var = expr_lhs->var;
+                expr_lhs2->int_or_float = expr_lhs->int_or_float;
                 add->lhs = expr_lhs2;
                 add->rhs = expr_rhs.value();
+                add->rhs->int_or_float = expr_rhs.value()->int_or_float;
                 expr->var = add;
             } else if (op.type == TokenType::star) {
                 auto star = m_allocator.alloc<NodeBinExprMulti>();
                 expr_lhs2->var = expr_lhs->var;
+                expr_lhs2->int_or_float = expr_lhs->int_or_float;
                 star->lhs = expr_lhs2;
                 star->rhs = expr_rhs.value();
+                star->rhs->int_or_float = expr_rhs.value()->int_or_float;
                 expr->var = star;
             } else if (op.type == TokenType::sub) {
                 auto sub = m_allocator.alloc<NodeBinExprSub>();
                 expr_lhs2->var = expr_lhs->var;
+                expr_lhs2->int_or_float = expr_lhs->int_or_float;
                 sub->lhs = expr_lhs2;
                 sub->rhs = expr_rhs.value();
+                sub->rhs->int_or_float = expr_rhs.value()->int_or_float;
                 expr->var = sub;
             } else if (op.type == TokenType::div) {
                 auto div = m_allocator.alloc<NodeBinExprDiv>();
                 expr_lhs2->var = expr_lhs->var;
+                expr_lhs2->int_or_float = expr_lhs->int_or_float;
                 div->lhs = expr_lhs2;
                 div->rhs = expr_rhs.value();
+                div->rhs->int_or_float = expr_rhs.value()->int_or_float;
                 expr->var = div;
             }
-            // Reset expr lhs
             expr_lhs->var = expr;
+            expr_lhs->int_or_float = int_or_float;
         }
         return expr_lhs;
         /* ENd implmentation of precedence climbing */
 
     }
-
 
         // Function to parse statements, such as functions like let, or exits, etc.
         std::optional<NodeStmt*> parse_stmt() {
@@ -324,9 +350,12 @@ public:
                 // Get rid of equals token
                 consume();
 
+                // Could potentially add here a way to distinguish if next token is float or int in node
+
                 // Parse expression after equals, c
                 if (auto expr = parse_expr()) {
                     node_stmt_let->expr = expr.value();
+                    node_stmt_let->int_or_float = expr.value()->int_or_float;
                 } else {
                     error_expected("expression");
                 }
@@ -347,6 +376,7 @@ public:
 
                 if (auto expr = parse_expr()) {
                     node_stmt_assign->expr = expr.value();
+                    node_stmt_assign->expr->int_or_float = expr.value()->int_or_float;
                 } else {
                     error_expected("let");
                 }
@@ -388,6 +418,7 @@ public:
             } else {
                 return {};
             }
+            return {};
         }
 
         // Function that parses an entire program, token by token
