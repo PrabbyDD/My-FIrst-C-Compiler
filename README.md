@@ -21,6 +21,9 @@ cd build
 echo $?
 ```
 
-Things left to finish before i am satisfied with this project for now:
-  - Basic functions
-  - Basic pointers 
+I am currently done working on this project at the moment, but I made a separate branch for code I was testing before I moved on. If I ever come back to this, these will be the first things I do:
+  - Floats work decently, but there are still some bugs with the precedence climbing algo and its interaction with floats + int combination arithmetic
+  - Pointers are broken, and despite the basic logic being there and making sense, something about grabbing the address of previous variables I put on the stack is not working. 
+  - Functions are not implemented, but scopes are, so I imagine its a matter of just defining proper tokens for a function header and then giving that function node in the AST a scope node to work with, similar to how if statements work.
+
+Thanks for viewing :) 
