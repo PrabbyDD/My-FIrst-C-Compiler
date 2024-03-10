@@ -27,6 +27,9 @@ enum class TokenType{
     else_,
     float_lit,
     decimal,
+    ptr,
+    deref,
+
 
 
 };
@@ -88,6 +91,10 @@ class Tokenizer {
                         tokens.push_back({.type = TokenType::if_, line_count});
                         buf.clear();
                         continue;
+                    } else if (buf == "ptr") {
+                        tokens.push_back({.type = TokenType::ptr, line_count});
+                        buf.clear();
+                        continue;
                     } else if (buf == "elif") {
                         tokens.push_back({.type = TokenType::elif, line_count});
                         buf.clear();
@@ -102,6 +109,9 @@ class Tokenizer {
                 } else if (peek().value() == '\n') {
                     consume();
                     line_count++;
+                } else if (peek().value() == '@') {
+                    consume();
+                    tokens.push_back({TokenType::deref, line_count});
                 } else if (peek().value() == '.') {
                     // Case for a decimal that starts with '.' i.e .69
                     buf.push_back(consume());

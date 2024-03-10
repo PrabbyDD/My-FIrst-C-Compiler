@@ -1,2 +1,3 @@
-let x = 2 + 1;
+let x = 2;
+ptr y = x;
 exit(x);

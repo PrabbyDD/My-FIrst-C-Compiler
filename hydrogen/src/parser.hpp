@@ -106,15 +106,22 @@ struct NodeStmtIf {
     std::optional<NodeIfPred*> pred;
 };
 
-// For variable reassignment, like x = 7;
+// For variable reassignment, like x = 7, or y = @x (deref the x pointer)
 struct NodeStmtAssign {
     Token ident;
+    Token deref_ident;
     NodeExpr* expr{};
+};
+
+struct NodeStmtPtr {
+    // ptr ident1 = ident2 -> ident1 contains address of ident2
+    Token ident1;
+    Token ident2;
 };
 
 // Node representing statements, like setting variables with let, exit statements, etc..
 struct NodeStmt {
-    std::variant<NodeStmtExit*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtAssign*> var;
+    std::variant<NodeStmtExit*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtAssign*, NodeStmtPtr*> var;
 };
 
 // A node representing the program as a list of statements to parse
@@ -350,8 +357,6 @@ public:
                 // Get rid of equals token
                 consume();
 
-                // Could potentially add here a way to distinguish if next token is float or int in node
-
                 // Parse expression after equals, c
                 if (auto expr = parse_expr()) {
                     node_stmt_let->expr = expr.value();
@@ -365,7 +370,25 @@ public:
                 node_stmt_return->var = node_stmt_let;
                 return node_stmt_return;
 
-            // Variable assignment, i.e. x = 1;
+            // Pointer assignment
+            } else if (peek().has_value() && peek().value().type == TokenType::ptr && peek(1).has_value()
+                       && peek(1).value().type == TokenType::ident && peek(2).has_value()
+                       && peek(2).value().type == TokenType::equals && peek(3).has_value()
+                       && peek(3).value().type == TokenType::ident) {
+
+                // Consume ptr
+                consume();
+                auto stmt_ptr = m_allocator.alloc<NodeStmtPtr>();
+                stmt_ptr->ident1 = consume();
+
+                // Consume equals
+                consume();
+                stmt_ptr->ident2 = consume();
+                try_consume(TokenType::semi, "';'");
+                auto stmt = m_allocator.alloc<NodeStmt>();
+                stmt->var = stmt_ptr;
+                return stmt;
+            // Variable assignment, i.e. x = 1, can also do x = @y, where y is a ptr, and we deref y for its value
             } else if (peek().has_value() && peek().value().type == TokenType::ident &&
             peek(1).has_value() && peek(1).value().type == TokenType::equals) {
                 auto node_stmt_assign = m_allocator.alloc<NodeStmtAssign>();
@@ -374,7 +397,12 @@ public:
                 //Get rid of equals
                 consume();
 
-                if (auto expr = parse_expr()) {
+                // If we are dereferencing a pointer, no expression can follow it, no math like that as of now
+                if (peek().has_value() && peek().value().type == TokenType::deref) {
+                    // Consume @
+                    consume();
+                    node_stmt_assign->deref_ident = consume();
+                } else if (auto expr = parse_expr()) {
                     node_stmt_assign->expr = expr.value();
                     node_stmt_assign->expr->int_or_float = expr.value()->int_or_float;
                 } else {
@@ -395,7 +423,6 @@ public:
                 } else {
                     error_expected("scope");
                 }
-
             // If statements
             } else if (auto if_ = try_consume(TokenType::if_)){
                 try_consume(TokenType::open_paran, "'(");

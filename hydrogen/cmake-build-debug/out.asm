@@ -1,17 +1,11 @@
 global _start
 _start:
-    ;; / begin addition
-    mov rax, 1
-    push rax
     mov rax, 2
     push rax
-    pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    ;; / end addition
     ;; /let
-    push QWORD [rsp + 0]
+    lea dword rbx, [rsp + 18446743889168757400]
+    push rbx
+    push QWORD [rsp + 8]
     mov rax, 60
     pop rdi
     syscall

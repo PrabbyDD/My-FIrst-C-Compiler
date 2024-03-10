@@ -32,7 +32,6 @@ class Generator {
                         exit(EXIT_FAILURE);
                     }
                     std::stringstream offset;
-
                     // Taking value from further down in stack @ stack_loc and then making a copy of it and pushing it to top of stack so that it can be used
                     offset << "QWORD [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "]";
                     gen.push(offset.str());
@@ -83,7 +82,6 @@ class Generator {
                         gen.pop("rax");
                         gen.pop("rbx");
                         gen.m_output << "    add rax, rbx\n";
-                        std::cout << "OM JEERE";
 
                         // put result back on stack, i think rax gets overwritten with new val
                         gen.push("rax");
@@ -107,7 +105,6 @@ class Generator {
                         gen.pop("rax");
                         gen.pop("rbx");
                         gen.m_output << "    mul rbx\n";
-                        std::cout << "OM JEERE";
 
                         gen.push("rax");
                     }
@@ -130,7 +127,6 @@ class Generator {
                     } else {
                         gen.pop("rax");
                         gen.pop("rbx");
-                        std::cout << "OM JEERE";
                         gen.m_output << "    sub rax, rbx\n";
                         gen.push("rax");
                     }
@@ -151,7 +147,6 @@ class Generator {
                         gen.push_float("xmm0");
 
                     } else {
-                        std::cout << "OM JEERE";
 
                         gen.pop("rax");
                         gen.pop("rbx");
@@ -194,7 +189,6 @@ class Generator {
         }
 
         void gen_if_pred(const NodeIfPred* pred, const std::string& end_label) {
-
             struct PredVisitor {
                 Generator& gen;
                 const std::string& end_label_store;
@@ -247,6 +241,7 @@ class Generator {
                     gen.pop("rdi");
                     gen.m_output << "    syscall\n";
                 }
+
                 void operator ()(const NodeStmtLet* stmt_let) {
 
                     // Code to find if identifier already in vector of identifiers
@@ -261,7 +256,6 @@ class Generator {
                         std::cerr << "Identifier already initialized! " << stmt_let->ident.value.value() << std::endl;
                         exit(EXIT_FAILURE);
                     }
-
                     // Insert into vector, optionally its int or float type
                     gen.m_vars.push_back({.stack_loc = gen.m_stack_size, .name = stmt_let->ident.value.value(), .int_or_float = stmt_let->int_or_float});
 
@@ -269,6 +263,47 @@ class Generator {
                     // Now value of expression is at top of the stack
                     gen.gen_expr(stmt_let->expr);
                     gen.m_output <<"    ;; /let\n";
+                }
+                void operator ()(const NodeStmtPtr* stmt_ptr) {
+
+                    // Code to find if identifier1 already in vector of identifiers
+                    auto it = std::find_if(
+                            gen.m_vars.cbegin(),
+                            gen.m_vars.cend(),
+                            [&](const Var& var) { return var.name == stmt_ptr->ident1.value.value();
+                            });
+                    if (it != gen.m_vars.cend()) {
+                        // If we already initialized a variable with same identifier name
+                        std::cerr << "Identifier already initialized! " << stmt_ptr->ident1.value.value() << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+
+                    // Code to find if identifier2 is NOT in the vector, it should be in vector
+                    auto it2 = std::find_if(
+                            gen.m_vars.cbegin(),
+                            gen.m_vars.cend(),
+                            [&](const Var& var) { return var.name == stmt_ptr->ident2.value.value();
+                            });
+                    if (it2 == gen.m_vars.cend()) {
+                        // If we already initialized a variable with same identifier name
+                        std::cerr << "Identifier not initialized! " << stmt_ptr->ident2.value.value() << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+
+
+                    // Make new Var to give us info about where it is on stack and what identifier it is
+                    gen.m_vars.push_back({.stack_loc = gen.m_stack_size, .name = stmt_ptr->ident1.value.value()});
+
+                    // Retrieve ident2 address and then push it onto stack, pop off in deref
+                    // load address into rbx
+                    for (auto& j: gen.m_vars) {
+                        std::cout << j.name << " located at " << j.stack_loc << "\n";
+                        std::cout << it.base()->name << " located at " << it->stack_loc << "\n";
+                        std::cout << it2->name << " located at " << it2->stack_loc << "\n";
+                    }
+
+                    gen.m_output << "    lea dword rbx, [rsp + " << (gen.m_stack_size - it2->stack_loc - 1) * 8 << "]\n";
+                    gen.push("rbx");
                 }
                 void operator ()(const NodeStmtAssign* stmt_assign) {
 
@@ -280,14 +315,34 @@ class Generator {
                             });
                     if (it != gen.m_vars.cend()) {
                         // Recall this function generates assembly that puts result of this expr on top of stack
-                        gen.gen_expr(stmt_assign->expr);
+
                         // Pop off top of stack into rax (int) or xmm0 (float), then back into memory
                         if (it->int_or_float == TokenType::int_lit) {
+                            gen.gen_expr(stmt_assign->expr);
                             gen.pop("rax");
                             gen.m_output << "    mov [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
                         } else if (it->int_or_float == TokenType::float_lit) {
+                            gen.gen_expr(stmt_assign->expr);
                             gen.pop_float("xmm0");
                             gen.m_output << "    movq [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], xmm0\n";
+                        } else {
+                            // Code to find if deref ident
+                            auto it2 = std::find_if(
+                                    gen.m_vars.cbegin(),
+                                    gen.m_vars.cend(),
+                                    [&](const Var& var) { return var.name == stmt_assign->deref_ident.value.value();
+                                    });
+                            if (it2 != gen.m_vars.cend()) {
+                                // If we already initialized a variable with same identifier name
+                                // ex. trying to init let x = 7 and let x = 8 after is wrong
+                                std::cerr << "Identifier already initialized! " << stmt_assign->deref_ident.value.value() << std::endl;
+                                exit(EXIT_FAILURE);
+                            }
+
+                            // Push address from deref ident into rbx, then value into rax, then at stack location of id1
+                            gen.m_output << "    mov rbx, [rsp + " << (gen.m_stack_size - it2->stack_loc - 1) * 8 << "]\n";
+                            gen.m_output << "    mov rax, [rbx]\n";
+                            gen.m_output << "    mov [rsp + " << (gen.m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
                         }
                     } else {
                         std::cerr << "Identifier not initialized: " << stmt_assign->ident.value.value() << std::endl;
@@ -296,8 +351,9 @@ class Generator {
 
                 }
                 void operator ()(const NodeScope* stmt_scope) {
-                        gen.gen_scope(stmt_scope);
+                    gen.gen_scope(stmt_scope);
                 }
+
                 void operator ()(const NodeStmtIf* stmt_if) {
                     // Puts result of expression on top of stack
                     gen.gen_expr(stmt_if->expr);
